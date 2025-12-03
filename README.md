@@ -3,39 +3,41 @@
 Small, self contained reference that shows how to train a PyTorch model with Distributed Data Parallel (DDP), resume from checkpoints, and keep the codebase approachable for beginners.
 
 ```mermaid
+
 flowchart TD
 
-    A[Start torchrun<br>--nproc_per_node=2] --> B[Spawn Processes<br>Rank 0 & Rank 1]
+    A[Start torchrun --nproc_per_node=2] --> B[Spawn Processes: Rank 0 and Rank 1]
 
-    B --> C[Initialize Process Group<br>backend='gloo'/'nccl']
-    
-    C --> D1[Rank 0 Loads Dataset<br>MNIST + Sampler]
-    C --> D2[Rank 1 Loads Dataset<br>MNIST + Sampler]
+    B --> C[Initialize Process Group]
 
-    D1 --> E1[Each Rank Builds Model]
-    D2 --> E2[Each Rank Builds Model]
+    C --> D1[Rank 0 Loads Dataset (MNIST)]
+    C --> D2[Rank 1 Loads Dataset (MNIST)]
 
-    E1 --> F1[Wrap in DistributedDataParallel]
-    E2 --> F2[Wrap in DistributedDataParallel]
+    D1 --> E1[Rank 0 Builds Model]
+    D2 --> E2[Rank 1 Builds Model]
 
-    F1 --> G1[Forward Pass<br>(Rank 0)]
-    F2 --> G2[Forward Pass<br>(Rank 1)]
+    E1 --> F1[Rank 0 Wraps Model in DDP]
+    E2 --> F2[Rank 1 Wraps Model in DDP]
 
-    G1 --> H1[Backward Pass<br>Compute Gradients]
-    G2 --> H2[Backward Pass<br>Compute Gradients]
+    F1 --> G1[Rank 0 Forward Pass]
+    F2 --> G2[Rank 1 Forward Pass]
 
-    H1 --> I[DDP Gradient Sync<br>All-Reduce]
+    G1 --> H1[Rank 0 Backward Pass]
+    G2 --> H2[Rank 1 Backward Pass]
+
+    H1 --> I[DDP Gradient Synchronization (All-Reduce)]
     H2 --> I
 
-    I --> J1[Optimizer Step<br>(Each Rank Updates Weights)]
-    I --> J2
+    I --> J1[Optimizer Step on Rank 0]
+    I --> J2[Optimizer Step on Rank 1]
 
     J1 --> K1[Rank 0 Saves Checkpoint]
-    J2 --> K2[Rank 1 Does NOT Save]
+    J2 --> K2[Rank 1 Does Not Save]
 
     K1 --> L[Cleanup Process Group]
 
     L --> M[End Training]
+
 
 ```
 
